@@ -1,0 +1,13 @@
+{
+    "saved_nets": {
+        "SSID_1": "password_1",
+        "SSID_2": "password_2"
+    },
+    "custom_led_pin": 16,
+    "relay_pins": {
+        "1": {
+            "pin": 5,
+            "state": 0
+        }
+    }
+}
