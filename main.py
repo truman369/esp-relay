@@ -85,6 +85,15 @@ class ConfigRelays():
         return fmt_msg(msg, err_code)
 
 
+class ConfigLed():
+    """API endpoint to config led pin"""
+
+    @required_fields(['pin'])
+    def post(self, data):
+        msg, err_code = config_led_pin(data['pin'])
+        return fmt_msg(msg, err_code)
+
+
 class Relay():
     """API endpoint for relay management"""
 
@@ -119,6 +128,7 @@ def exec_system_reboot(_):
 # add api endpoints
 api.add_resource(ConfigNets, '/api/config/nets')
 api.add_resource(ConfigRelays, '/api/config/relays')
+api.add_resource(ConfigLed, '/api/config/led')
 api.add_resource(Relay, '/api/relay/<name>')
 
 # add watchdog task

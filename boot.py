@@ -112,6 +112,7 @@ def add_relay(name, pin):
             save_cfg()
             msg = 'Added relay [%s] pin [%d]' % (name, pin)
             err_code = 201
+    print(msg)
     return msg, err_code
 
 
@@ -140,6 +141,7 @@ def change_relay_pin(name, pin):
             machine.Pin(old_pin).init(machine.Pin.IN)
             msg = 'Relay [%s] pin changed to [%d]' % (name, pin)
             err_code = 200
+    print(msg)
     return msg, err_code
 
 
@@ -157,6 +159,28 @@ def delete_relay(name):
         save_cfg()
         msg = 'Relay [%s] removed.' % name
         err_code = 200
+    print(msg)
+    return msg, err_code
+
+
+def config_led_pin(pin):
+    """Change custom led pin"""
+    pin = int(pin)
+    if pin == cfg['custom_led_pin']:
+        msg = 'Custom led pin is already [%d]. Skipping...' % pin
+        err_code = 406
+    else:
+        try:
+            machine.Pin(pin).init(machine.Pin.OUT)
+        except Exception as e:
+            msg = e
+            err_code = 500
+        else:
+            cfg['custom_led_pin'] = pin
+            save_cfg()
+            msg = 'Custom led pin changed to [%s]' % pin
+            err_code = 200
+    print(msg)
     return msg, err_code
 
 
