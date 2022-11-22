@@ -17,16 +17,17 @@ gc.enable()
 
 # file for saving config and relay state
 CFG_FILE = 'config.json'
+# led pins (values are inverted, 0 - enabled, 1- disabled)
+ESP_LED_PIN = 2
+# default config
 cfg = {
     # saved_nets: key is ssid and value is password
     "saved_nets": {},
-    "relay_pins": {'1': {'pin': 4, 'state': 0},
-                   '2': {'pin': 14, 'state': 0},
-                   '3': {'pin': 12, 'state': 0},
-                   '4': {'pin': 13, 'state': 0}}
+    # custom led pin by default is the same as on esp
+    "custom_led_pin": ESP_LED_PIN,
+    # relay pins: {"relay_name": {"pin": int, "state": int}, ...}
+    "relay_pins": {}
 }
-# led pins (values are inverted, 0 - enabled, 1- disabled)
-ESP_LED_PIN = 2
 # dict with machine pins
 relays = {}
 
@@ -49,8 +50,6 @@ def reboot():
 
 def add_ssid(ssid, password):
     """Add new net to config"""
-    msg = ''
-    err_code = 200
     if ssid in cfg['saved_nets']:
         msg = 'SSID [%s] already exists. Skipping...' % ssid
         err_code = 406
@@ -58,14 +57,13 @@ def add_ssid(ssid, password):
         cfg['saved_nets'][ssid] = password
         save_cfg()
         msg = 'SSID [%s] added.' % ssid
+        err_code = 201
     print(msg)
     return msg, err_code
 
 
 def edit_ssid(ssid, password):
     """Change password for saved ssid"""
-    msg = ''
-    err_code = 200
     if not ssid in cfg['saved_nets']:
         msg = 'SSID [%s] not found. Skipping...' % ssid
         err_code = 404
@@ -76,14 +74,13 @@ def edit_ssid(ssid, password):
         cfg['saved_nets'][ssid] = password
         save_cfg()
         msg = 'Password for [%s] changed.' % ssid
+        err_code = 200
     print(msg)
     return msg, err_code
 
 
 def delete_ssid(ssid):
     """Delete ssid from config"""
-    msg = ''
-    err_code = 200
     if not ssid in cfg['saved_nets']:
         msg = 'SSID [%s] not found. Skipping...' % ssid
         err_code = 404
@@ -91,7 +88,75 @@ def delete_ssid(ssid):
         del cfg['saved_nets'][ssid]
         save_cfg()
         msg = 'SSID [%s] removed.' % ssid
+        err_code = 200
     print(msg)
+    return msg, err_code
+
+
+def add_relay(name, pin):
+    """Add new relay"""
+    name = str(name)
+    pin = int(pin)
+    state = 0
+    if name in cfg['relay_pins']:
+        msg = 'Relay [%s] already exists. Skipping...' % name
+        err_code = 406
+    else:
+        try:
+            relays[name] = machine.Pin(pin, machine.Pin.OUT, value=state)
+        except Exception as e:
+            msg = e
+            err_code = 500
+        else:
+            cfg['relay_pins'][name] = {"pin": pin, "state": state}
+            save_cfg()
+            msg = 'Added relay [%s] pin [%d]' % (name, pin)
+            err_code = 201
+    return msg, err_code
+
+
+def change_relay_pin(name, pin):
+    """Change relay pin"""
+    name = str(name)
+    pin = int(pin)
+    if not name in cfg['relay_pins']:
+        msg = 'Relay [%s] not found. Skipping...' % name
+        err_code = 404
+    elif pin == cfg['relay_pins'][name]['pin']:
+        msg = 'Relay [%s] pin is already [%d]. Skipping...' % (name, pin)
+        err_code = 406
+    else:
+        try:
+            relays[name] = machine.Pin(pin, machine.Pin.OUT,
+                                       value=cfg['relay_pins'][name]['state'])
+        except Exception as e:
+            msg = e
+            err_code = 500
+        else:
+            old_pin = cfg['relay_pins'][name]['pin']
+            cfg['relay_pins'][name]['pin'] = pin
+            save_cfg()
+            machine.Pin(old_pin).value(0)
+            machine.Pin(old_pin).init(machine.Pin.IN)
+            msg = 'Relay [%s] pin changed to [%d]' % (name, pin)
+            err_code = 200
+    return msg, err_code
+
+
+def delete_relay(name):
+    """Delete relay"""
+    name = str(name)
+    if not name in cfg['relay_pins']:
+        msg = 'Relay [%s] not found. Skipping...' % name
+        err_code = 404
+    else:
+        relays[name].value(0)
+        relays[name].init(machine.Pin.IN)
+        del (relays[name])
+        del (cfg['relay_pins'][name])
+        save_cfg()
+        msg = 'Relay [%s] removed.' % name
+        err_code = 200
     return msg, err_code
 
 
@@ -107,21 +172,23 @@ def set_relay(name, state):
         err_code = 404
     elif relays[name].value() == state:
         # nothing to change
-        msg = 'Relay [%s] state is already [%s]' % (name, state)
+        msg = 'Relay [%s] state is already [%d]' % (name, state)
         err_code = 406
     else:
         # change relay state, change config and save json
         relays[name].value(state)
         cfg['relay_pins'][name]['state'] = state
         save_cfg()
-        msg = 'Relay [%s] state changed to [%s]' % (name, state)
+        msg = 'Relay [%s] state changed to [%d]' % (name, state)
     print(msg)
     return msg, err_code
 
 
 print('\nStarting ESP Relay...')
+
 # init esp led and enable it on startup (inverted: 0 is enabled)
 esp_led = machine.Pin(ESP_LED_PIN, machine.Pin.OUT, value=0)
+
 # load config from file or create default
 if not CFG_FILE in os.listdir():
     print('[WARN] Config file not found, creating default...')
@@ -135,22 +202,32 @@ else:
         print('[ERROR] Failed to load config: ', e)
     else:
         cfg = data
-# check for configured custom led pin and init it enabled
-if 'custom_led_pin' in cfg:
-    custom_led_pin = cfg['custom_led_pin']
-    print('Custom led pin: %s' % custom_led_pin)
-else:
-    custom_led_pin = ESP_LED_PIN
-custom_led = machine.Pin(custom_led_pin, machine.Pin.OUT, value=0)
+        print('Loaded config:')
+
+# init custom led and enable it
+custom_led = machine.Pin(cfg['custom_led_pin'], machine.Pin.OUT, value=0)
+
 # print current config and init pins
-print('_'*17+'\n|Relay|Pin|State|')
-for k, v in sorted(cfg['relay_pins'].items()):
-    print('|%3s  |%2s |%3s  |' % (k, v['pin'], v['state']))
-    relays[k] = machine.Pin(v['pin'], machine.Pin.OUT, value=v['state'])
+if len(cfg['relay_pins']) > 0:
+    print('_'*17+'\n|Relay|Pin|State|')
+    for k, v in sorted(cfg['relay_pins'].items()):
+        print('|%3s  |%2d |%3d  |' % (k, v['pin'], v['state']))
+        relays[k] = machine.Pin(v['pin'], machine.Pin.OUT, value=v['state'])
+    print('-'*17)
+else:
+    print('No relays configured!')
+
+if cfg['custom_led_pin'] != ESP_LED_PIN:
+    print('Custom led pin: %d' % cfg['custom_led_pin'])
+else:
+    print('No custom led pin set')
+
 if len(cfg['saved_nets']) > 0:
-    print('-'*17+'\nSaved nets:')
+    print('Saved nets:')
     for ssid in cfg['saved_nets']:
         print('  %2s' % (ssid))
+else:
+    print('No saved networks')
 
 # init wlan interfaces
 wlan_ap = network.WLAN(network.AP_IF)

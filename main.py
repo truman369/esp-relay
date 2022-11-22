@@ -44,7 +44,7 @@ async def do_reboot():
     reboot()
 
 
-class SavedNets():
+class ConfigNets():
     """API endpoint for saved nets"""
 
     def get(self, _):
@@ -63,6 +63,25 @@ class SavedNets():
     @required_fields(['ssid'])
     def delete(self, data):
         msg, err_code = delete_ssid(data['ssid'])
+        return fmt_msg(msg, err_code)
+
+
+class ConfigRelays():
+    """API endpoint for relay config"""
+
+    @required_fields(['name', 'pin'])
+    def post(self, data):
+        msg, err_code = add_relay(data['name'], data['pin'])
+        return fmt_msg(msg, err_code)
+
+    @required_fields(['name', 'pin'])
+    def put(self, data):
+        msg, err_code = change_relay_pin(data['name'], data['pin'])
+        return fmt_msg(msg, err_code)
+
+    @required_fields(['name'])
+    def delete(self, data):
+        msg, err_code = delete_relay(data['name'])
         return fmt_msg(msg, err_code)
 
 
@@ -98,7 +117,8 @@ def exec_system_reboot(_):
 
 
 # add api endpoints
-api.add_resource(SavedNets, '/api/config/nets')
+api.add_resource(ConfigNets, '/api/config/nets')
+api.add_resource(ConfigRelays, '/api/config/relays')
 api.add_resource(Relay, '/api/relay/<name>')
 
 # add watchdog task
