@@ -26,8 +26,7 @@ cfg = {
                    '4': {'pin': 13, 'state': 0}}
 }
 # led pins (values are inverted, 0 - enabled, 1- disabled)
-WIFI_LED_PIN = 2
-BOARD_LED_PIN = 5
+ESP_LED_PIN = 2
 # dict with machine pins
 relays = {}
 
@@ -121,9 +120,8 @@ def set_relay(name, state):
 
 
 print('\nStarting ESP Relay...')
-# init leds, enable both leds on startup (inverted: 0 is enabled)
-board_led = machine.Pin(BOARD_LED_PIN, machine.Pin.OUT, value=0)
-wifi_led = machine.Pin(WIFI_LED_PIN, machine.Pin.OUT, value=0)
+# init esp led and enable it on startup (inverted: 0 is enabled)
+esp_led = machine.Pin(ESP_LED_PIN, machine.Pin.OUT, value=0)
 # load config from file or create default
 if not CFG_FILE in os.listdir():
     print('[WARN] Config file not found, creating default...')
@@ -137,6 +135,13 @@ else:
         print('[ERROR] Failed to load config: ', e)
     else:
         cfg = data
+# check for configured custom led pin and init it enabled
+if 'custom_led_pin' in cfg:
+    custom_led_pin = cfg['custom_led_pin']
+    print('Custom led pin: %s' % custom_led_pin)
+else:
+    custom_led_pin = ESP_LED_PIN
+custom_led = machine.Pin(custom_led_pin, machine.Pin.OUT, value=0)
 # print current config and init pins
 print('_'*17+'\n|Relay|Pin|State|')
 for k, v in sorted(cfg['relay_pins'].items()):
@@ -188,7 +193,7 @@ if len(cfg['saved_nets']) > 0:
             # stop on first connected network
             if connected:
                 # disable wifi led
-                wifi_led.value(1)
+                esp_led.value(1)
                 wlan_ap.active(False)
                 print('\nConnected to [%s]' % ssid)
                 print('\nIP:%17s\nNET:%16s\nGW:%17s\nDNS:%16s\n' %

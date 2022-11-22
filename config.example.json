@@ -1,9 +1,9 @@
-// Edit and rename it to config.json
 {
     "saved_nets": {
         "SSID_1": "password_1",
         "SSID_2": "password_2"
     },
+    "custom_led_pin": 5,
     "relay_pins": {
         "1": {
             "pin": 4,

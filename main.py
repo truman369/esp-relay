@@ -118,7 +118,7 @@ except KeyboardInterrupt:
     sys.exit()
 
 print('Starting web api server...')
-# disable board led
-board_led.value(1)
+# disable custom led
+custom_led.value(1)
 # exec loop.run_forever() inside api web server run
 api.run(host='0.0.0.0', port=80, loop_forever=True)
