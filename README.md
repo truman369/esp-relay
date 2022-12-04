@@ -65,6 +65,7 @@ During startup, ESP will scan for networks and connect to the first available ne
 
 ### Relay pins
 On the board, the relay control pins are located near the ESP pins, which allows you to connect them with jumpers.
+
 ![ESP12F_X4_Relay pins](/assets/pins.webp)
 > On the `ESP12F_Relay_X4` model, `RY1` is near `IO16`, but during ESP initialization, this pin is always HIGH. Therefore, the relay will be switched on briefly each time at boot. To prevent it, I use `IO4` pin for `RY1` in my configuration, just connected them with a short wire.
 
@@ -141,7 +142,7 @@ curl -s -X GET 10.0.0.10/api/relay
   }
 }
 ```
-
+[↑](#api-endpoints)
 ### `GET` /api/relay/:name
 > Get status of the relay with name `:name`.
 #### Example request:
@@ -155,7 +156,7 @@ curl -s -X GET 10.0.0.10/api/relay/1
   "state": 1
 }
 ```
-
+[↑](#api-endpoints)
 ### `PUT` /api/relay/:name
 > Change status of the relay with name `:name`.
 #### Request data required:
@@ -172,7 +173,7 @@ curl -s -X PUT -d "state=0" 10.0.0.10/api/relay/1
   "message": "Relay [1] state changed to [0]"
 }
 ```
-
+[↑](#api-endpoints)
 ### `GET` /api/config/nets
 > Get list of saved networks
 #### Example request:
@@ -188,7 +189,7 @@ curl -s -X GET 10.0.0.10/api/config/nets
   ]
 }
 ```
-
+[↑](#api-endpoints)
 ### `POST` /api/config/nets
 > Add new wireless network
 #### Request data required:
@@ -206,7 +207,7 @@ curl -s -X POST 10.0.0.10/api/config/nets -d "ssid=Test Net" -d "password=supers
   "message": "SSID [Test Net] added."
 }
 ```
-
+[↑](#api-endpoints)
 ### `PUT` /api/config/nets
 > Change password of existing network
 #### Request data required:
@@ -224,7 +225,7 @@ curl -s -X POST 10.0.0.10/api/config/nets -d "ssid=Test Net" -d "password=newsup
   "message": "Password for [Test Net] changed."
 }
 ```
-
+[↑](#api-endpoints)
 ### `DELETE` /api/config/nets
 > Remove existing network
 #### Request data required:
@@ -241,7 +242,7 @@ curl -s -X DELETE 10.0.0.10/api/config/nets -d "ssid=Test Net"
   "message": "SSID [Test Net] removed."
 }
 ```
-
+[↑](#api-endpoints)
 ### `POST` /api/config/relays
 > Add new relay pin
 #### Request data required:
@@ -259,7 +260,7 @@ curl -s -X POST 10.0.0.10/api/config/relays -d "name=5" -d "pin=15"
   "message": "Added relay [5] pin [15]"
 }
 ```
-
+[↑](#api-endpoints)
 ### `PUT` /api/config/relays
 > Change existing relay pin
 #### Request data required:
@@ -277,7 +278,7 @@ curl -s -X PUT 10.0.0.10/api/config/relays -d "name=5" -d "pin=16"
   "message": "Relay [5] pin changed to [16]"
 }
 ```
-
+[↑](#api-endpoints)
 ### `DELETE` /api/config/relays
 > Remove existing relay
 #### Request data required:
@@ -294,7 +295,7 @@ curl -s -X DELETE 10.0.0.10/api/config/relays -d "name=5"
   "message": "Relay [5] removed."
 }
 ```
-
+[↑](#api-endpoints)
 ### `POST` /api/config/led
 > Setup board led pin
 #### Request data required:
@@ -311,7 +312,7 @@ curl -s -X POST 10.0.0.10/api/config/led -d "pin=5"
   "message": "Custom led pin changed to [5]"
 }
 ```
-
+[↑](#api-endpoints)
 ### `POST` /api/system/reboot
 > Reboot the board
 #### Example request:
@@ -324,6 +325,6 @@ curl -s -X POST 10.0.0.10/api/system/reboot
   "message": "Reboot initiated"
 }
 ```
-
+[↑](#api-endpoints)
 ## Debug mode
 After connecting to a WiFi network, you have 3 seconds to press Ctrl+C in the UART console to cancel the API server starting and get into the REPL for debugging. If you press Ctrl+C after API server start, this will trigger watchdog to reboot the board.
